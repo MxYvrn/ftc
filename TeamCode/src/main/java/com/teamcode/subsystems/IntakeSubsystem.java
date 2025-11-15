@@ -15,6 +15,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 public class IntakeSubsystem {
     private final DcMotor intakeMotor;
     private boolean outtakeModeActive = false;
+    private double lastPower = 0.0;
 
     public IntakeSubsystem(HardwareMap hw, String motorName) {
         DcMotor motor = null;
@@ -89,18 +90,24 @@ public class IntakeSubsystem {
 
     /**
      * Update intake state based on inputs (for TeleOp).
+     * Uses power caching to prevent redundant setPower() calls.
      * @param intakeTrigger - LT value (0.0 to 1.0)
      */
     public void update(double intakeTrigger) {
         if (intakeMotor == null) return;
 
-        // Outtake mode takes priority
+        // Determine target power based on mode
+        double targetPower = 0.0;
         if (outtakeModeActive) {
-            reverse();
+            targetPower = INTAKE_POWER_EJECT;
         } else if (intakeTrigger > TRIGGER_THRESHOLD) {
-            intakeOn();
-        } else {
-            intakeOff();
+            targetPower = INTAKE_POWER_COLLECT;
+        }
+
+        // Only update motor if power changed (avoid redundant I2C traffic)
+        if (Math.abs(targetPower - lastPower) > 0.01) {
+            intakeMotor.setPower(targetPower);
+            lastPower = targetPower;
         }
     }
 
