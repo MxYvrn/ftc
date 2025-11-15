@@ -7,6 +7,7 @@ import com.teamcode.Constants;
 /**
  * Subsystem for managing continuous rotation servos.
  * These servos run continuously at a set speed (like motors).
+ * Gracefully handles missing servos (they may not be configured).
  */
 public class CRServoSubsystem {
     private final CRServo servo1;
@@ -16,10 +17,24 @@ public class CRServoSubsystem {
     private double servo2Power = Constants.CR_SERVO_SPEED;
 
     public CRServoSubsystem(HardwareMap hw) {
-        servo1 = hw.get(CRServo.class, Constants.CR_SERVO_1_NAME);
-        servo2 = hw.get(CRServo.class, Constants.CR_SERVO_2_NAME);
+        CRServo s1 = null;
+        CRServo s2 = null;
+        try {
+            s1 = hw.get(CRServo.class, Constants.CR_SERVO_1_NAME);
+        } catch (Exception e) {
+            // Servo 1 not found in config
+            s1 = null;
+        }
+        try {
+            s2 = hw.get(CRServo.class, Constants.CR_SERVO_2_NAME);
+        } catch (Exception e) {
+            // Servo 2 not found in config
+            s2 = null;
+        }
+        servo1 = s1;
+        servo2 = s2;
 
-        // Start servos immediately
+        // Start servos immediately if present
         start();
     }
 
@@ -27,16 +42,16 @@ public class CRServoSubsystem {
      * Start both servos at configured speed.
      */
     public void start() {
-        servo1.setPower(servo1Power);
-        servo2.setPower(servo2Power);
+        if (servo1 != null) servo1.setPower(servo1Power);
+        if (servo2 != null) servo2.setPower(servo2Power);
     }
 
     /**
      * Stop both servos.
      */
     public void stop() {
-        servo1.setPower(0.5); // 0.5 = stopped for CR servos
-        servo2.setPower(0.5);
+        if (servo1 != null) servo1.setPower(0.5); // 0.5 = stopped for CR servos
+        if (servo2 != null) servo2.setPower(0.5);
     }
 
     /**
@@ -45,7 +60,7 @@ public class CRServoSubsystem {
      */
     public void setServo1Power(double power) {
         servo1Power = power;
-        servo1.setPower(power);
+        if (servo1 != null) servo1.setPower(power);
     }
 
     /**
@@ -54,7 +69,21 @@ public class CRServoSubsystem {
      */
     public void setServo2Power(double power) {
         servo2Power = power;
-        servo2.setPower(power);
+        if (servo2 != null) servo2.setPower(power);
+    }
+
+    /**
+     * Check if servo 1 is present.
+     */
+    public boolean isServo1Present() {
+        return servo1 != null;
+    }
+
+    /**
+     * Check if servo 2 is present.
+     */
+    public boolean isServo2Present() {
+        return servo2 != null;
     }
 
     /**

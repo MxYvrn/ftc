@@ -203,14 +203,18 @@ public final class Constants {
     public static final String CR_SERVO_2_NAME = "crServo2";
 
     // ========== SHOOTER CONFIGURATION ==========
-    // Flywheel speeds in RPM (for goBILDA 5203 series motor)
+    // Flywheel speeds in RPM
     // ADJUSTED VALUES - tune these based on your actual hardware performance
     public static final double SHOOTER_SPEED_LOW = 500.0;       // RPM (idle/close shots)
     public static final double SHOOTER_SPEED_MEDIUM = 800.0;    // RPM (medium distance)
     public static final double SHOOTER_SPEED_MAX = 1200.0;      // RPM (long distance shots)
 
-    // Convert RPM to encoder ticks/sec (goBILDA 5202 motor: 537.7 PPR)
-    public static final double SHOOTER_TICKS_PER_REV = 537.7;
+    // Convert RPM to encoder ticks/sec
+    // NOTE: Verify your motor type and update SHOOTER_TICKS_PER_REV accordingly:
+    //   - goBILDA 5202 series: 537.7 PPR
+    //   - goBILDA 5203 series: 384.5 PPR
+    //   - REV HD Hex Motor: 2240 CPR
+    public static final double SHOOTER_TICKS_PER_REV = 537.7;  // Currently set for goBILDA 5202
     public static final double SHOOTER_RPM_TO_TPS = SHOOTER_TICKS_PER_REV / 60.0;
 
     // PIDF gains for shooter velocity control (tune on actual hardware)

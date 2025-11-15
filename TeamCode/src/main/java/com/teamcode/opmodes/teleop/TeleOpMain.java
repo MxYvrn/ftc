@@ -166,8 +166,8 @@ public class TeleOpMain extends LinearOpMode {
         telemetry.addLine();
 
         telemetry.addLine("=== CR SERVOS ===");
-        telemetry.addData("Servo 1", "%.2f", crServos.getServo1Power());
-        telemetry.addData("Servo 2", "%.2f", crServos.getServo2Power());
+        telemetry.addData("Servo 1", crServos.isServo1Present() ? String.format("%.2f", crServos.getServo1Power()) : "NOT FOUND");
+        telemetry.addData("Servo 2", crServos.isServo2Present() ? String.format("%.2f", crServos.getServo2Power()) : "NOT FOUND");
         telemetry.addLine();
 
         // Health warnings

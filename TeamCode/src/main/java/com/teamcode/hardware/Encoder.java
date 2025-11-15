@@ -16,15 +16,27 @@ public class Encoder {
     private boolean initialized = false;
 
     public Encoder(HardwareMap hw, String name, int directionMultiplier) {
-        this.motor = name == null || name.isEmpty() ? null : hw.get(DcMotorEx.class, name);
+        DcMotorEx m = null;
+        try {
+            m = (name == null || name.isEmpty()) ? null : hw.get(DcMotorEx.class, name);
+        } catch (Exception e) {
+            // Motor not found in config - encoder will be disabled
+            m = null;
+        }
+        this.motor = m;
         this.dir = directionMultiplier;
         if (motor != null) {
-            this.lastPos = motor.getCurrentPosition();
-            this.initialized = true;
+            try {
+                this.lastPos = motor.getCurrentPosition();
+                this.initialized = true;
+            } catch (Exception e) {
+                // Failed to read encoder - treat as not present
+                this.initialized = false;
+            }
         }
     }
 
-    public boolean isPresent() { return motor != null; }
+    public boolean isPresent() { return motor != null && initialized; }
 
     /** @return Current raw encoder position in ticks (direction-adjusted) */
     public int getRaw() { return isPresent() ? motor.getCurrentPosition() * dir : 0; }
