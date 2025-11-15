@@ -3,6 +3,7 @@ package com.teamcode.opmodes.teleop;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.teamcode.Constants;
+import com.teamcode.subsystems.CRServoSubsystem;
 import com.teamcode.subsystems.DriveSubsystem;
 import com.teamcode.subsystems.FeederSubsystem;
 import com.teamcode.subsystems.IntakeSubsystem;
@@ -19,6 +20,7 @@ public class TeleOpMain extends LinearOpMode {
     private ShooterSubsystem shooter;
     private FeederSubsystem feeder;
     private IntakeSubsystem intake;
+    private CRServoSubsystem crServos;
 
     // Button edge detection
     private boolean lastDpadUp = false;
@@ -41,6 +43,7 @@ public class TeleOpMain extends LinearOpMode {
         shooter = new ShooterSubsystem(hardwareMap);
         feeder = new FeederSubsystem(hardwareMap);
         intake = new IntakeSubsystem(hardwareMap, Constants.INTAKE_MOTOR_NAME);
+        crServos = new CRServoSubsystem(hardwareMap);
 
         // Set shooter to medium idle speed
         shooter.setSpeedMode(ShooterSubsystem.SpeedMode.MEDIUM);
@@ -104,6 +107,7 @@ public class TeleOpMain extends LinearOpMode {
         shooter.stop();
         feeder.stop();
         intake.intakeOff();
+        crServos.stop();
     }
 
     /**
@@ -120,12 +124,15 @@ public class TeleOpMain extends LinearOpMode {
         // Shooter speed mode changes (X/Y/B rising edges)
         if (gamepad2.x && !lastX) {
             shooter.setSpeedMode(ShooterSubsystem.SpeedMode.LOW);
+            telemetry.addLine(">>> BUTTON X: Set to LOW speed");
         }
         if (gamepad2.y && !lastY) {
             shooter.setSpeedMode(ShooterSubsystem.SpeedMode.MEDIUM);
+            telemetry.addLine(">>> BUTTON Y: Set to MEDIUM speed");
         }
         if (gamepad2.b && !lastB) {
             shooter.setSpeedMode(ShooterSubsystem.SpeedMode.MAX);
+            telemetry.addLine(">>> BUTTON B: Set to MAX speed");
         }
         lastX = gamepad2.x;
         lastY = gamepad2.y;
@@ -156,6 +163,11 @@ public class TeleOpMain extends LinearOpMode {
         telemetry.addData("Intake Power", "%.2f", intake.getPower());
         telemetry.addData("Outtake Mode", intake.isOuttakeModeActive() ? "ON" : "off");
         telemetry.addData("Feeder Power", "%.2f", feeder.getPower());
+        telemetry.addLine();
+
+        telemetry.addLine("=== CR SERVOS ===");
+        telemetry.addData("Servo 1", "%.2f", crServos.getServo1Power());
+        telemetry.addData("Servo 2", "%.2f", crServos.getServo2Power());
         telemetry.addLine();
 
         // Health warnings

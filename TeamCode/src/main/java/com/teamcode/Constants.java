@@ -198,12 +198,16 @@ public final class Constants {
     public static final String SHOOTER_MOTOR_NAME = "shootMotor";
     public static final String FEEDER_MOTOR_NAME = "indexMotor";
 
+    // CR Servos (Continuous Rotation)
+    public static final String CR_SERVO_1_NAME = "crServo1";
+    public static final String CR_SERVO_2_NAME = "crServo2";
+
     // ========== SHOOTER CONFIGURATION ==========
     // Flywheel speeds in RPM (for goBILDA 5203 series motor)
-    // MEASURED VALUES from actual hardware
-    public static final double SHOOTER_SPEED_LOW = 1100.0;      // RPM (idle/close shots)
-    public static final double SHOOTER_SPEED_MEDIUM = 1700.0;   // RPM (medium distance)
-    public static final double SHOOTER_SPEED_MAX = 2000.0;      // RPM (long distance shots)
+    // ADJUSTED VALUES - tune these based on your actual hardware performance
+    public static final double SHOOTER_SPEED_LOW = 500.0;       // RPM (idle/close shots)
+    public static final double SHOOTER_SPEED_MEDIUM = 800.0;    // RPM (medium distance)
+    public static final double SHOOTER_SPEED_MAX = 1200.0;      // RPM (long distance shots)
 
     // Convert RPM to encoder ticks/sec (goBILDA 5202 motor: 537.7 PPR)
     public static final double SHOOTER_TICKS_PER_REV = 537.7;
@@ -221,6 +225,10 @@ public final class Constants {
     // ========== FEEDER (M4) CONFIGURATION ==========
     public static final double FEEDER_SHOOT_POWER = 0.5;  // Half speed during shooting
     public static final double FEEDER_RAMP_TIME_MS = 150; // Ramp up time to avoid jamming
+
+    // ========== CR SERVO CONFIGURATION ==========
+    // Continuous rotation servo speeds (0.0 = full reverse, 0.5 = stop, 1.0 = full forward)
+    public static final double CR_SERVO_SPEED = 1.0;  // Run at full speed forward
 
     // ========== TELEOP CONTROL THRESHOLDS ==========
     public static final double TRIGGER_THRESHOLD = 0.1;  // Minimum trigger press to activate
