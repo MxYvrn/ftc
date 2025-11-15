@@ -3,9 +3,19 @@ package com.teamcode.util;
 public final class Angle {
     private Angle() {}
 
+    /**
+     * Normalize angle to [-π, π).
+     * Handles extreme angles efficiently.
+     * Note: Returns values in [-π, π) (inclusive lower, exclusive upper).
+     */
     public static double norm(double a) {
-        while (a <= -Math.PI) a += 2*Math.PI;
-        while (a >  Math.PI)  a -= 2*Math.PI;
+        // Fast path for already-normalized angles
+        if (a >= -Math.PI && a < Math.PI) return a;
+
+        // Handle extreme angles with modulo
+        a = a % (2 * Math.PI);
+        if (a < -Math.PI) a += 2*Math.PI;
+        if (a >= Math.PI)  a -= 2*Math.PI;
         return a;
     }
 

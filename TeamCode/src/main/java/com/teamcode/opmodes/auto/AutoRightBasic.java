@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.teamcode.Constants;
-import com.teamcode.subsystems.Drive;
+import com.teamcode.subsystems.DriveSubsystem;
 import com.teamcode.subsystems.Odometry;
 import com.teamcode.util.Pose2d;
 
@@ -19,26 +19,51 @@ public class AutoRightBasic extends LinearOpMode {
     }
 
     private Odometry odo;
-    private Drive drive;
+    private DriveSubsystem drive;
     private State state;
     private ElapsedTime stateTimer;
     private ElapsedTime runtime;
+
+    // Telemetry rate limiting
+    private long lastTelemetryNs = 0;
+    private static final long TELEMETRY_INTERVAL_NS = 100_000_000L; // 100ms = 10Hz
+
+    // Cached target poses to avoid per-loop allocations
+    private Pose2d targetScore;
+    private Pose2d targetPark;
 
     @Override
     public void runOpMode() throws InterruptedException {
         // Initialize subsystems
         odo = new Odometry(hardwareMap);
-        drive = new Drive(hardwareMap);
+        drive = new DriveSubsystem(hardwareMap, odo);
         stateTimer = new ElapsedTime();
         runtime = new ElapsedTime();
 
-        // Set starting pose
+        // Pre-allocate target poses (avoids GC during loop)
+        targetScore = new Pose2d(
+            Constants.AUTO_SCORE_X,
+            Constants.AUTO_SCORE_Y,
+            Constants.AUTO_SCORE_HEADING_RAD
+        );
+        targetPark = new Pose2d(
+            Constants.AUTO_PARK_X,
+            Constants.AUTO_PARK_Y,
+            Constants.AUTO_PARK_HEADING_RAD
+        );
+
+        // Set starting pose and flush encoder deltas
         Pose2d startPose = new Pose2d(
             Constants.AUTO_START_X,
             Constants.AUTO_START_Y,
             Constants.AUTO_START_HEADING_RAD
         );
         odo.setPose(startPose);
+        odo.update();  // Flush any accumulated encoder deltas from INIT
+        odo.setPose(startPose);  // Re-apply pose after flush
+
+        // Set telemetry transmission interval (reduces Driver Station bandwidth)
+        telemetry.setMsTransmissionInterval(100); // 100ms = 10Hz max
 
         telemetry.addData("Status", "Initialized");
         telemetry.addData("Start Pose", "X=%.1f Y=%.1f H=%.1f°",
@@ -53,6 +78,14 @@ public class AutoRightBasic extends LinearOpMode {
         stateTimer.reset();
 
         while (opModeIsActive()) {
+            // CRITICAL: Global 30-second timeout for FTC rule compliance
+            if (runtime.seconds() > 29.5) {
+                drive.stop();
+                telemetry.addLine("AUTO TIMEOUT - STOPPED AT 29.5s");
+                telemetry.update();
+                break;
+            }
+
             // 1) Update odometry
             odo.update();
 
@@ -72,25 +105,24 @@ public class AutoRightBasic extends LinearOpMode {
                     break;
             }
 
-            // 3) Telemetry
-            updateTelemetry();
-            telemetry.update();
+            // 3) Telemetry (rate-limited to 10Hz to prevent I2C congestion)
+            long now = System.nanoTime();
+            if (now - lastTelemetryNs > TELEMETRY_INTERVAL_NS) {
+                updateTelemetry();
+                telemetry.update();
+                lastTelemetryNs = now;
+            }
 
             idle();
         }
 
-        // Safety stop
+        // Safety stop for Auto→TeleOp transition
         drive.stop();
+        sleep(100);  // Ensure stop command is sent before transition
     }
 
     private void handleDriveToScore() {
-        Pose2d target = new Pose2d(
-            Constants.AUTO_SCORE_X,
-            Constants.AUTO_SCORE_Y,
-            Constants.AUTO_SCORE_HEADING_RAD
-        );
-
-        if (driveToTarget(target) || stateTimer.seconds() > Constants.AUTO_STEP_TIMEOUT_S) {
+        if (driveToTarget(targetScore) || stateTimer.seconds() > Constants.AUTO_STEP_TIMEOUT_S) {
             // Reached target or timeout
             drive.stop();
             transitionTo(State.SCORE_PRELOAD);
@@ -108,59 +140,19 @@ public class AutoRightBasic extends LinearOpMode {
     }
 
     private void handleDriveToPark() {
-        Pose2d target = new Pose2d(
-            Constants.AUTO_PARK_X,
-            Constants.AUTO_PARK_Y,
-            Constants.AUTO_PARK_HEADING_RAD
-        );
-
-        if (driveToTarget(target) || stateTimer.seconds() > Constants.AUTO_STEP_TIMEOUT_S) {
+        if (driveToTarget(targetPark) || stateTimer.seconds() > Constants.AUTO_STEP_TIMEOUT_S) {
             drive.stop();
             transitionTo(State.IDLE);
         }
     }
 
     /**
-     * Proportional controller to drive to target pose.
+     * Drive to target pose using DriveSubsystem's built-in controller.
      * @return true if within tolerance, false otherwise
      */
     private boolean driveToTarget(Pose2d target) {
-        Pose2d current = odo.getPose();
-
-        // Compute field-relative error
-        double errorX = target.x - current.x;
-        double errorY = target.y - current.y;
-        double errorHeading = normalizeAngle(target.heading - current.heading);
-
-        // Check if within tolerance
-        double posError = Math.hypot(errorX, errorY);
-        if (posError < Constants.AUTO_POS_TOLERANCE_IN &&
-            Math.abs(errorHeading) < Constants.AUTO_ANGLE_TOLERANCE_RAD) {
-            return true;
-        }
-
-        // Transform field error to robot frame
-        double cosH = Math.cos(current.heading);
-        double sinH = Math.sin(current.heading);
-        double errorForward = errorX * cosH + errorY * sinH;
-        double errorStrafe  = -errorX * sinH + errorY * cosH;
-
-        // Proportional control
-        double forward = errorForward * Constants.DRIVE_KP_POS;
-        double strafe  = errorStrafe * Constants.DRIVE_KP_POS;
-        double turn    = errorHeading * Constants.DRIVE_KP_ANGLE;
-
-        // Clamp to max speed
-        double maxLinear = Math.max(Math.abs(forward), Math.abs(strafe));
-        if (maxLinear > Constants.AUTO_MAX_SPEED) {
-            double scale = Constants.AUTO_MAX_SPEED / maxLinear;
-            forward *= scale;
-            strafe *= scale;
-        }
-        turn = clamp(turn, -Constants.AUTO_MAX_SPEED, Constants.AUTO_MAX_SPEED);
-
-        drive.driveRobotCentric(forward, strafe, turn);
-        return false;
+        // DriveSubsystem.driveToPose() handles all the P-control logic
+        return drive.driveToPose(target, Constants.AUTO_POS_TOLERANCE_IN, Constants.AUTO_ANGLE_TOLERANCE_RAD);
     }
 
     private void transitionTo(State newState) {
@@ -177,15 +169,16 @@ public class AutoRightBasic extends LinearOpMode {
             pose.x, pose.y, Math.toDegrees(pose.heading));
         telemetry.addData("Velocity", "Vx=%.1f Vy=%.1f Ω=%.2f",
             odo.getVx(), odo.getVy(), Math.toDegrees(odo.getOmega()));
-    }
 
-    private double normalizeAngle(double angle) {
-        while (angle > Math.PI) angle -= 2 * Math.PI;
-        while (angle < -Math.PI) angle += 2 * Math.PI;
-        return angle;
-    }
-
-    private double clamp(double val, double min, double max) {
-        return Math.max(min, Math.min(max, val));
+        // Health warnings
+        if (!drive.checkMotorHealth()) {
+            telemetry.addLine("⚠️ MOTOR FAILURE DETECTED");
+        }
+        if (odo.isStrafeEncoderMissing()) {
+            telemetry.addLine("⚠️ 2-WHEEL ODO (strafe encoder missing)");
+        }
+        if (odo.getImuFailureCount() >= 5) {
+            telemetry.addLine("⚠️ IMU FAILED (encoder-only heading)");
+        }
     }
 }
