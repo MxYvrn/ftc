@@ -12,16 +12,15 @@ package com.teamcode;
  * ┌────────────────────────────────────────────────────────────────────────┐
  * │ Motors (DcMotorEx):                                                    │
  * │   Port 0: frontRightMotor - Mecanum drive (goBILDA 5203 series)       │
+ * │            ↳ Encoder: Left odometry pod (REV Through Bore 8192 CPR)   │
  * │   Port 1: backRightMotor  - Mecanum drive (goBILDA 5203 series)       │
+ * │            ↳ Encoder: Right odometry pod (REV Through Bore 8192 CPR)  │
  * │   Port 2: frontLeftMotor  - Mecanum drive (goBILDA 5203 series)       │
+ * │            ↳ Encoder: Strafe odometry pod (REV Through Bore 8192 CPR) │
  * │   Port 3: backLeftMotor   - Mecanum drive (goBILDA 5203 series)       │
  * │                                                                        │
- * │ Odometry Encoders (plugged into drivetrain motor encoder slots):      │
- * │   Port 0: leftEncoder     - REV Through Bore @ 8192 CPR               │
- * │   Port 1: rightEncoder    - REV Through Bore @ 8192 CPR (X encoder)   │
- * │   Port 2: strafeEncoder   - REV Through Bore @ 8192 CPR (Y encoder)   │
- * │                                                                        │
  * │   ⚠️ NOTE: Port 0 encoder contact is LOOSE - may affect accuracy!     │
+ * │   ⚠️ CODE USES MOTOR NAMES to read encoders (e.g., "frontRightMotor") │
  * └────────────────────────────────────────────────────────────────────────┘
  *
  * CONTROL HUB (Manipulator Motors):
@@ -63,9 +62,10 @@ public final class Constants {
     private Constants() {}
 
     // ========== HARDWARE DEVICE NAMES (must match Robot Configuration) ==========
-    public static final String ENC_LEFT   = "leftEncoder";
-    public static final String ENC_RIGHT  = "rightEncoder";
-    public static final String ENC_STRAFE = "strafeEncoder"; // set null/"" to disable (2-wheel mode)
+    // Odometry encoders use the motor port names (encoders plugged into motor ports)
+    public static final String ENC_LEFT   = "frontRightMotor";  // Port 0 encoder
+    public static final String ENC_RIGHT  = "backRightMotor";   // Port 1 encoder
+    public static final String ENC_STRAFE = "frontLeftMotor";   // Port 2 encoder
     public static final String IMU_NAME   = "imu";
 
     // Encoder configuration
