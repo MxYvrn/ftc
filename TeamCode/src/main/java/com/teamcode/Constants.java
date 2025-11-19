@@ -241,4 +241,5 @@ public final class Constants {
     // ========== DRIVE SPEEDS ==========
     public static final double TELEOP_DRIVE_SPEED_NORMAL = 1.0;  // Full speed
     public static final double TELEOP_DRIVE_SPEED_PRECISION = 0.4; // Slow mode (if bumper held)
+    public static final double PARK_MODE_SPEED_FACTOR = 0.4;  // Park mode speed (40% of full)
 }

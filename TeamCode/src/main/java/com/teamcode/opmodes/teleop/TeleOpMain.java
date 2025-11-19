@@ -27,6 +27,10 @@ public class TeleOpMain extends LinearOpMode {
     private boolean lastX = false;
     private boolean lastY = false;
     private boolean lastB = false;
+    private boolean lastLeftBumper = false;
+
+    // Park mode state
+    private boolean parkModeActive = false;
 
     // Telemetry rate limiting
     private long lastTelemetryNs = 0;
@@ -52,6 +56,7 @@ public class TeleOpMain extends LinearOpMode {
         telemetry.addLine("✓ Ready");
         telemetry.addLine("Controls:");
         telemetry.addLine("  GP1: Drive (left stick + right stick)");
+        telemetry.addLine("  GP1 LB: Park mode toggle");
         telemetry.addLine("  GP2 LT: Intake");
         telemetry.addLine("  GP2 RT: Shoot");
         telemetry.addLine("  GP2 X/Y/B: Shooter speed");
@@ -75,9 +80,17 @@ public class TeleOpMain extends LinearOpMode {
             double forward = -gamepad1.left_stick_y;  // Inverted (up = positive)
             double strafe = gamepad1.left_stick_x;
             double turn = gamepad1.right_stick_x;
-            double speedMultiplier = gamepad1.right_bumper
-                ? Constants.TELEOP_DRIVE_SPEED_PRECISION
-                : Constants.TELEOP_DRIVE_SPEED_NORMAL;
+
+            // Determine speed multiplier: park mode overrides precision mode
+            double speedMultiplier;
+            if (parkModeActive) {
+                speedMultiplier = Constants.PARK_MODE_SPEED_FACTOR;
+            } else if (gamepad1.right_bumper) {
+                speedMultiplier = Constants.TELEOP_DRIVE_SPEED_PRECISION;
+            } else {
+                speedMultiplier = Constants.TELEOP_DRIVE_SPEED_NORMAL;
+            }
+
             drive.teleopDrive(forward, strafe, turn, speedMultiplier);
 
             // Intake (gamepad2)
@@ -114,6 +127,19 @@ public class TeleOpMain extends LinearOpMode {
      * Read gamepad inputs and handle button edge detection.
      */
     private void readInputs() {
+        // Park mode toggle (gamepad1 left_bumper rising edge)
+        boolean leftBumperNow = gamepad1.left_bumper;
+        if (leftBumperNow && !lastLeftBumper) {
+            parkModeActive = !parkModeActive;
+            // Gamepad rumble feedback
+            if (parkModeActive) {
+                gamepad1.rumble(200);  // Short rumble when enabled
+            } else {
+                gamepad1.rumble(100);  // Shorter rumble when disabled
+            }
+        }
+        lastLeftBumper = leftBumperNow;
+
         // Outtake toggle (dpad_up rising edge)
         boolean dpadUpNow = gamepad2.dpad_up;
         if (dpadUpNow && !lastDpadUp) {
@@ -146,7 +172,15 @@ public class TeleOpMain extends LinearOpMode {
         Pose2d pose = odometry.getPose();
 
         telemetry.addLine("=== DRIVE ===");
-        telemetry.addData("Speed Mode", gamepad1.right_bumper ? "PRECISION" : "NORMAL");
+        String speedMode;
+        if (parkModeActive) {
+            speedMode = "🅿️ PARK (40%)";
+        } else if (gamepad1.right_bumper) {
+            speedMode = "PRECISION";
+        } else {
+            speedMode = "NORMAL";
+        }
+        telemetry.addData("Speed Mode", speedMode);
         telemetry.addData("Pose", "X=%.1f Y=%.1f H=%.0f°",
             pose.x, pose.y, Math.toDegrees(pose.heading));
         telemetry.addLine();
