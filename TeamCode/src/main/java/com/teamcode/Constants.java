@@ -26,7 +26,7 @@ package com.teamcode;
  * CONTROL HUB (Manipulator Motors):
  * ┌────────────────────────────────────────────────────────────────────────┐
  * │ Motors (DcMotorEx):                                                    │
- * │   Port 0: shootMotor   - Shooter flywheel (goBILDA 5203 series)       │
+ * │   Port 0: shooterMotor   - Shooter flywheel (goBILDA 5203 series)       │
  * │   Port 1: intakeMotor  - Intake roller (goBILDA 5203 series)          │
  * │   Port 2: indexMotor   - Feeder/indexer (goBILDA 5203 series)         │
  * │                                                                        │
@@ -195,7 +195,7 @@ public final class Constants {
     public static final double INTAKE_POWER_EJECT = -0.6;
 
     // ========== TELEOP HARDWARE ==========
-    public static final String SHOOTER_MOTOR_NAME = "shootMotor";
+    public static final String SHOOTER_MOTOR_NAME = "shooterMotor";
     public static final String FEEDER_MOTOR_NAME = "indexMotor";
 
     // CR Servos (Continuous Rotation)
