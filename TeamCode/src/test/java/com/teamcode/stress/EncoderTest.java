@@ -1,8 +1,6 @@
-package com.teamcode.stress;
+package com.teamcode.hardware;
 
 import com.teamcode.hardware.Encoder;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 import org.junit.Test;
 import static org.junit.Assert.*;
 

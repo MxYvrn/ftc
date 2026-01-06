@@ -46,6 +46,10 @@ public class Encoder {
                 // Failed to read encoder - treat as not present
                 this.initialized = false;
             }
+        } else if (testReader != null) {
+            // Test seam: allow tests to create an Encoder without a real motor
+            this.lastPos = testReader.getCurrentPosition() * dir;
+            this.initialized = true;
         }
     }
 
