@@ -29,15 +29,15 @@ public class FeederSubsystem {
      * @param intakeDirSign - intake direction sign: +1.0 for intake, -1.0 for outtake, 0.0 for stopped
      */
     public void setFeedCommand(boolean shootActive, double rtTriggerValue, double intakeDirSign) {
-        // Detect rising edge to start ramp timer
-        boolean active = shootActive || (rtTriggerValue > Constants.TRIGGER_THRESHOLD);
-        if (active && !wasFeeding) {
+        // BUGFIX: Reset ramp timer whenever shoot command becomes active (not just on rising edge)
+        // This ensures proper ramp-up even if command toggles rapidly
+        if (shootActive && !feedCommandActive) {
             rampTimer.reset();
         }
         feedCommandActive = shootActive; // Shoot command still uses ramp
         rtValue = rtTriggerValue;
         intakeDirectionSign = intakeDirSign;
-        wasFeeding = active;
+        wasFeeding = shootActive || (rtTriggerValue > Constants.TRIGGER_THRESHOLD);
     }
 
     /**

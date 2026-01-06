@@ -145,6 +145,7 @@ public class DriveSubsystem {
 
     /**
      * Set individual motor powers (clamped to [-1, 1]) with voltage compensation.
+     * BUGFIX: Clamp voltage scale to prevent power exceeding safe limits.
      */
     public void setPowers(double fl, double fr, double bl, double br) {
         // Apply voltage compensation to maintain consistent speed across battery discharge
@@ -153,6 +154,9 @@ public class DriveSubsystem {
             double voltage = voltageSensor.getVoltage();
             if (voltage > 0) {
                 voltageScale = NOMINAL_VOLTAGE / voltage;
+                // Clamp voltage scale to prevent dangerous over-compensation
+                // Allow 0.8x to 1.2x range (handles 10V to 15V batteries safely)
+                voltageScale = clamp(voltageScale, 0.8, 1.2);
             }
         }
 

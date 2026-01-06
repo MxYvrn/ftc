@@ -216,7 +216,9 @@ public final class Constants {
     //   - goBILDA 5203 series: 384.5 PPR
     //   - REV HD Hex Motor: 2240 CPR
     public static final double SHOOTER_TICKS_PER_REV = 384.5;  // FIXED: goBILDA 5203 series (was 5202)
-    public static final double SHOOTER_RPM_TO_TPS = SHOOTER_TICKS_PER_REV;
+    // BUGFIX: Divide by 60 to convert RPM (revolutions per minute) to ticks per second
+    // Formula: RPM * ticks_per_rev / 60 = ticks_per_second
+    public static final double SHOOTER_RPM_TO_TPS = SHOOTER_TICKS_PER_REV / 60.0;
 
     // PIDF gains for shooter velocity control (tune on actual hardware)
     public static final double SHOOTER_KP = 5.0;

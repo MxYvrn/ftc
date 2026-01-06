@@ -65,7 +65,7 @@ public class ShooterSubsystem {
 
     /**
      * Main update - call every loop to maintain velocity setpoint.
-     * Uses negative velocity since motor direction is reversed.
+     * BUGFIX: Motor direction is FORWARD (user removed REVERSE), so use positive velocity.
      */
     public void update() {
         if (!shooterEnabled) {
@@ -73,8 +73,8 @@ public class ShooterSubsystem {
             return;
         }
         // Velocity control is handled by DcMotorEx internally via PIDF
-        // Use negative velocity because motor direction is set to REVERSE
-        shooterMotor.setVelocity(-targetVelocityTPS);
+        // Use positive velocity since motor direction is FORWARD
+        shooterMotor.setVelocity(targetVelocityTPS);
     }
 
     /**
@@ -113,10 +113,10 @@ public class ShooterSubsystem {
 
     /**
      * Get current shooter velocity in RPM.
-     * Takes absolute value since motor direction is reversed.
+     * BUGFIX: Take absolute value to handle both directions safely.
      */
     public double getVelocityRPM() {
-        double tps = Math.abs(shooterMotor.getVelocity()); // ticks/sec (absolute value for reversed motor)
+        double tps = Math.abs(shooterMotor.getVelocity()); // ticks/sec (absolute value for safety)
         return tps / Constants.SHOOTER_RPM_TO_TPS;
     }
 
