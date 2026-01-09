@@ -31,6 +31,9 @@ public class AutoRightBasic extends LinearOpMode {
     // Cached target poses to avoid per-loop allocations
     private Pose2d targetScore;
     private Pose2d targetPark;
+    
+    // Pre-allocated pose for zero-allocation telemetry (Step 1 optimization)
+    private final Pose2d cachedPose = new Pose2d();
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -106,6 +109,7 @@ public class AutoRightBasic extends LinearOpMode {
             }
 
             // 3) Telemetry (rate-limited to 10Hz to prevent I2C congestion)
+            // Step 7: Cache System.nanoTime() to avoid multiple calls
             long now = System.nanoTime();
             long delta = now - lastTelemetryNs;
             if (delta < 0) { // handle nanoTime overflow
@@ -166,14 +170,25 @@ public class AutoRightBasic extends LinearOpMode {
     }
 
     private void updateTelemetry() {
-        Pose2d pose = odo.getPose();
+        // Step 1: Zero-allocation pose read
+        odo.getPoseInto(cachedPose);
+        
+        // Step 3: Pre-compute Math.toDegrees() and cache method calls
+        double headingDeg = Math.toDegrees(cachedPose.heading);
+        double runtimeSec = runtime.seconds();
+        double stateTimeSec = stateTimer.seconds();
+        double vx = odo.getVx();
+        double vy = odo.getVy();
+        double omega = odo.getOmega();
+        double omegaDeg = Math.toDegrees(omega);
+        
         telemetry.addData("State", state);
-        telemetry.addData("Runtime", "%.1f / 30.0 s", runtime.seconds());
-        telemetry.addData("State Time", "%.2f s", stateTimer.seconds());
+        telemetry.addData("Runtime", "%.1f / 30.0 s", runtimeSec);
+        telemetry.addData("State Time", "%.2f s", stateTimeSec);
         telemetry.addData("Pose", "X=%.1f Y=%.1f H=%.1f°",
-            pose.x, pose.y, Math.toDegrees(pose.heading));
+            cachedPose.x, cachedPose.y, headingDeg);
         telemetry.addData("Velocity", "Vx=%.1f Vy=%.1f Ω=%.2f",
-            odo.getVx(), odo.getVy(), Math.toDegrees(odo.getOmega()));
+            vx, vy, omegaDeg);
 
         // Health warnings
         if (!drive.checkMotorHealth()) {

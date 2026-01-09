@@ -58,10 +58,8 @@ public class ShooterSubsystem {
      * Shooter will idle at this speed.
      */
     public void setSpeedMode(SpeedMode mode) {
-        if (mode != currentMode) {
-            currentMode = mode;
-            setTargetSpeed(mode);
-        }
+        currentMode = mode;
+        setTargetSpeed(mode);
     }
 
     /**

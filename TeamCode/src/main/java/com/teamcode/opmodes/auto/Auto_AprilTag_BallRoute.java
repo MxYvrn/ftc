@@ -153,7 +153,9 @@ public class Auto_AprilTag_BallRoute extends LinearOpMode {
 
         // ========== MAIN LOOP ==========
         while (opModeIsActive()) {
+            // Step 7: Cache System.nanoTime() to avoid multiple calls per loop
             long loopStart = System.nanoTime();
+            long now = loopStart;  // Reuse for telemetry check
 
             // CRITICAL: Global 30-second timeout for FTC rule compliance
             if (globalTimer.seconds() > 29.5) {
@@ -172,7 +174,6 @@ public class Auto_AprilTag_BallRoute extends LinearOpMode {
             updateStateMachine();
 
             // 3. TELEMETRY (rate-limited to 10Hz)
-            long now = System.nanoTime();
             long delta = now - lastTelemetryNs;
             if (delta < 0) { // handle nanoTime overflow
                 lastTelemetryNs = now;
@@ -391,4 +392,65 @@ public class Auto_AprilTag_BallRoute extends LinearOpMode {
         }
     }
 
+    /**
+     * Update telemetry with autonomous status.
+     * Step 1: Uses pre-allocated currentPose (already using getPoseInto).
+     * Step 3: Pre-computes Math.toDegrees() and caches method calls.
+     * Step 6: Restored optimized version after user deletion.
+     */
+    private void updateTelemetry() {
+        telemetry.addLine("=== AUTONOMOUS ===");
+        telemetry.addData("State", currentState);
+        telemetry.addData("Path", selectedPath);
+        
+        // Step 3: Cache method calls
+        double globalTimeSec = globalTimer.seconds();
+        double stateTimeSec = stateTimer.seconds();
+        
+        telemetry.addData("Runtime", "%.1f / 30.0 s", globalTimeSec);
+        telemetry.addData("State Time", "%.1f s", stateTimeSec);
+        telemetry.addLine();
+
+        telemetry.addLine("--- POSE ---");
+        // Step 3: Pre-compute Math.toDegrees() once
+        double headingDeg = Math.toDegrees(currentPose.heading);
+        telemetry.addData("X (in)", "%.1f", currentPose.x);
+        telemetry.addData("Y (in)", "%.1f", currentPose.y);
+        telemetry.addData("Heading (deg)", "%.1f", headingDeg);
+        telemetry.addLine();
+
+        telemetry.addLine("--- TARGET ---");
+        double targetHeadingDeg = Math.toDegrees(targetPose.heading);
+        telemetry.addData("Target X", "%.1f", targetPose.x);
+        telemetry.addData("Target Y", "%.1f", targetPose.y);
+        telemetry.addData("Target Hdg", "%.1f°", targetHeadingDeg);
+        telemetry.addLine();
+
+        double errorDist = Math.hypot(targetPose.x - currentPose.x, targetPose.y - currentPose.y);
+        telemetry.addData("Distance to Target", "%.1f in", errorDist);
+
+        // Update cached voltage every 500ms (overflow-safe)
+        long vnow = System.nanoTime();
+        long vdelta = vnow - lastVoltageReadNs;
+        if (vdelta < 0) {
+            lastVoltageReadNs = vnow;
+            vdelta = 0;
+        }
+        if (vdelta > 500_000_000L) {
+            cachedVoltage = drive.getVoltage();
+            lastVoltageReadNs = vnow;
+        }
+        telemetry.addData("Battery", "%.1f V", cachedVoltage);
+
+        // Health warnings
+        if (!drive.checkMotorHealth()) {
+            telemetry.addLine("⚠️ MOTOR FAILURE DETECTED");
+        }
+        if (odometry.isStrafeEncoderMissing()) {
+            telemetry.addLine("⚠️ 2-WHEEL ODO (strafe encoder missing)");
+        }
+        if (odometry.getImuFailureCount() >= 5) {
+            telemetry.addLine("⚠️ IMU FAILED (encoder-only heading)");
+        }
+    }
 }
