@@ -54,10 +54,10 @@ public class DriveSubsystem {
 
         DcMotorEx fl = null, fr = null, bl = null, br = null;
         try {
-            fl = hw.get(DcMotorEx.class, "FLMotor");
-            fr = hw.get(DcMotorEx.class, "FRMotor");
-            bl = hw.get(DcMotorEx.class, "BLMotor");
-            br = hw.get(DcMotorEx.class, "BRMotor");
+            fl = hw.get(DcMotorEx.class, "frontLeftMotor");
+            fr = hw.get(DcMotorEx.class, "frontRightMotor");
+            bl = hw.get(DcMotorEx.class, "backLeftMotor");
+            br = hw.get(DcMotorEx.class, "backRightMotor");
 
             // Standard mecanum motor directions
             fl.setDirection(DcMotorSimple.Direction.FORWARD);

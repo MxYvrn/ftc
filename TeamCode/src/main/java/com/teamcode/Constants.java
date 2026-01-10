@@ -63,9 +63,9 @@ public final class Constants {
 
     // ========== HARDWARE DEVICE NAMES (must match Robot Configuration) ==========
     // Odometry encoders use the motor port names (encoders plugged into motor ports)
-    public static final String ENC_LEFT   = "FRMotor";  // Port 0 encoder
-    public static final String ENC_RIGHT  = "BRMotor";   // Port 1 encoder
-    public static final String ENC_STRAFE = "FLMotor";   // Port 2 encoder
+    public static final String ENC_LEFT   = "frontLeftMotor";  // Port 0 encoder
+    public static final String ENC_RIGHT  = "frontRightMotor";   // Port 1 encoder
+    public static final String ENC_STRAFE = "backLeftMotor";   // Port 2 encoder
     public static final String IMU_NAME   = "imu";
 
     // Encoder configuration
